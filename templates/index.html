@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algoritmo Genético</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<h1>Configurações do Algoritmo Genético</h1>
+    
+<form method="POST" id="gaSettings">
+    <label for="popSize">Tamanho da População:</label>
+    <input type="number" id="popSize" value="50" required>
+
+    <label for="chromosomeLength">Tamanho do Cromossomo:</label>
+    <input type="number" id="chromosomeLength" value="2" required>
+
+    <label for="mutationRate">Probabilidade de Mutação:</label>
+    <input type="number" id="mutationRate" step="0.01" value="0.1" required>
+
+    <label for="crossoverRate">Probabilidade de Crossover:</label>
+    <input type="number" id="crossoverRate" step="0.01" value="0.8" required>
+
+    <label for="numGenerations">Quantidade de Gerações:</label>
+    <input type="number" id="numGenerations" value="100" required>
+
+    <label for="tournamentSize">Tamanho do Torneio:</label>
+    <input type="number" id="tournamentSize" value="5" required>
+
+    <label for="eliteSize">Quantidade de Membros da Elite:</label>
+    <input type="number" id="eliteSize" value="1" required>
+
+    <br/>
+    <button type="button" onclick="runGeneticAlgorithm()">Executar Algoritmo Genético</button>
+
+    <script>
+        function runGeneticAlgorithm() {
+            // Obter valores do formulário
+
+            const popSize = document.getElementById("popSize").value;
+            const chromosomeLength = document.getElementById("chromosomeLength").value;
+            const mutationRate = document.getElementById("mutationRate").value;
+            const crossoverRate = document.getElementById("crossoverRate").value;
+            const numGenerations = document.getElementById("numGenerations").value;
+            const tournamentSize = document.getElementById("tournamentSize").value;
+            const eliteSize = document.getElementById("eliteSize").value;
+
+            const formData =
+            [
+                {"popSize": popSize},
+                {"chromosomeLength": chromosomeLength},
+                {"mutationRate": mutationRate},
+                {"crossoverRate": crossoverRate},
+                {"numGenerations": numGenerations},
+                {"tournamentSize":tournamentSize},
+                {"eliteSize": eliteSize}
+            ]
+
+            console.log(formData);
+
+            // Enviar dados para o backend usando fetch
+            fetch('/run_genetic_algorithm', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                // Exibir resultados
+                displayResults(result);
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        function displayResults(result) {
+            // Exibir os resultados na página
+            console.log(result.value)
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h2>Resultados do Algoritmo Genético</h2>
+                <p>Melhor Solução: ${result.bestSolution.join(', ')}</p>
+                <p>Melhor Valor de Fitness: ${result.bestFitness}</p>
+            `;
+        }
+    </script>
+</form>
+</html>
