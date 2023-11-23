@@ -21,7 +21,7 @@ def run_genetic_algorithm_route():
 
     # result = run_genetic_algorithm(pop_size, chromosome_length, mutation_rate, crossover_rate, num_generations, tournament_size, elite_size)
 
-    print(request.form)
+    print(request.form['popSize'])
     return jsonify("result")
 
 if __name__ == '__main__':

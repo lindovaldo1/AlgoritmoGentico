@@ -1,106 +1,103 @@
-from flask import Flask, render_template, request, jsonify
-import numpy as np
+import random
+import math
 
-# Função de fitness
-def fitness(x, y):
-    return 15 + x * np.cos(2 * np.pi * x) + y * np.cos(14 * np.pi * y)
+# Definindo as variáveis e limites
+x1_lower_bound, x1_upper_bound = -3.1, 12.1
+x2_lower_bound, x2_upper_bound = 4.1, 5.8
 
-# Inicialização da população
-def initialize_population(pop_size, chromosome_length):
-    return np.random.rand(pop_size, chromosome_length)
 
-# Avaliação da população
-def evaluate_population(population):
-    return np.array([fitness(x, y) for x, y in population])
+# Função de aptidão a ser maximizada
+def fitness_function(x, y):
+    return 15 + x * math.cos(2 * math.pi * x) + y * math.cos(14 * math.pi * y)
 
-# Seleção por roleta
-def roulette_selection(fitness_values):
-    probabilities = fitness_values / np.sum(fitness_values)
-    selected_indices = np.random.choice(len(fitness_values), size=len(fitness_values), p=probabilities)
-    return selected_indices
 
-# Seleção por torneio
-def tournament_selection(fitness_values, tournament_size):
-    selected_indices = []
-    for _ in range(len(fitness_values)):
-        competitors = np.random.choice(len(fitness_values), size=tournament_size)
-        winner = np.argmax(fitness_values[competitors])
-        selected_indices.append(competitors[winner])
-    return selected_indices
+# Função para gerar indivíduos aleatórios
+def generate_individual():
+    x1 = random.uniform(x1_lower_bound, x1_upper_bound)
+    x2 = random.uniform(x2_lower_bound, x2_upper_bound)
+    return x1, x2
 
-# Cruzamento de um ponto
-def one_point_crossover(parent1, parent2):
-    crossover_point = np.random.randint(1, len(parent1))
-    child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
-    child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
+
+# Função de crossover (recombinação)
+def crossover(parent1, parent2):
+    crossover_point = random.uniform(0, 1)
+    child1 = (crossover_point * parent1[0] + (1 - crossover_point) * parent2[0],
+              crossover_point * parent1[1] + (1 - crossover_point) * parent2[1])
+    child2 = (crossover_point * parent2[0] + (1 - crossover_point) * parent1[0],
+              crossover_point * parent2[1] + (1 - crossover_point) * parent1[1])
     return child1, child2
 
-# Cruzamento de dois pontos
-def two_point_crossover(parent1, parent2):
-    crossover_points = np.sort(np.random.choice(len(parent1), size=2, replace=False))
-    child1 = np.concatenate((parent1[:crossover_points[0]], parent2[crossover_points[0]:crossover_points[1]], parent1[crossover_points[1]:]))
-    child2 = np.concatenate((parent2[:crossover_points[0]], parent1[crossover_points[0]:crossover_points[1]], parent2[crossover_points[1]:]))
-    return child1, child2
 
-# Mutação
-def mutate(child, mutation_rate):
-    mutation_mask = (np.random.rand(len(child)) < mutation_rate).astype(int)
-    mutation_values = np.random.rand(len(child))
-    child = child + mutation_mask * mutation_values
-    return child
+# Função de mutação
+def mutate(individual, mutation_rate=0.1):
+    mutated_x1 = individual[0] + random.uniform(-mutation_rate, mutation_rate)
+    mutated_x2 = individual[1] + random.uniform(-mutation_rate, mutation_rate)
 
-# Elitismo
-def elitism(population, fitness_values, elite_size):
-    elite_indices = np.argsort(fitness_values)[-elite_size:]
-    elite_population = population[elite_indices]
-    return elite_population
+    # Garantindo que os novos valores estejam dentro dos limites
+    mutated_x1 = max(min(mutated_x1, x1_upper_bound), x1_lower_bound)
+    mutated_x2 = max(min(mutated_x2, x2_upper_bound), x2_lower_bound)
 
-# Parâmetros do algoritmo genético
-pop_size = 50 # Tamanho da populacao
-chromosome_length = 2 #Tamanho do cromossomo
-mutation_rate = 0.1 # Probabilidade de mutação
-crossover_rate = 0.8 # Probabilidade de cruzamento
-num_generations = 100 # Quantidade de gerações
-tournament_size = 5 # Tamanho do torneio
-elite_size = 1 #Quantidade de membros da elite
+    return mutated_x1, mutated_x2
 
-def run_genetic_algorithm(pop_size, chromosome_length, mutation_rate, crossover_rate, num_generations, tournament_size, elite_size):
+
+# Seleção de pais com base no método escolhido
+def select_parents(population, fitness_scores, method, tournament_size):
+    if method == "roulette":
+        # Seleção por roleta
+        selected_parents = random.choices(population, weights=fitness_scores, k=len(population))
+    elif method == "tournament":
+        # Seleção por torneio
+        selected_parents = []
+        for _ in range(len(population)):
+            tournament_candidates = random.sample(list(enumerate(fitness_scores)), tournament_size)
+            tournament_winner = max(tournament_candidates, key=lambda x: x[1])[0]
+            selected_parents.append(population[tournament_winner])
+    else:
+        raise ValueError("Método de seleção inválido. Escolha 'roulette' ou 'tournament'.")
+
+    return selected_parents
+
+# Algoritmo genético principal
+def genetic_algorithm(population_size, generations, selection_method, tournament_size):
 
     # Inicialização da população
-    population = initialize_population(pop_size, chromosome_length)
+    population = [generate_individual() for _ in range(population_size)]
 
-    for generation in range(num_generations):
-        # Avaliação da população
-        fitness_values = evaluate_population(population)
 
-        # Seleção
-        selected_indices = tournament_selection(fitness_values, tournament_size)
+    for generation in range(generations):
+        # Avaliação da aptidão de cada indivíduo na população
+        fitness_scores = [fitness_function(x, y) for x, y in population]
 
-        # Cruzamento
-        for i in range(0, len(selected_indices), 2):
-            if np.random.rand() < crossover_rate:
-                parent1 = population[selected_indices[i]]
-                parent2 = population[selected_indices[i + 1]]
-                child1, child2 = one_point_crossover(parent1, parent2)
-                population[selected_indices[i]] = child1
-                population[selected_indices[i + 1]] = child2
+        # Seleção de pais com base na aptidão
+        selected_parents = select_parents(population, fitness_scores, selection_method, tournament_size)
 
-        # Mutação
-        for i in range(len(population)):
-            population[i] = mutate(population[i], mutation_rate)
+        # Crossover e mutação para gerar a próxima geração
+        new_population = []
+        for i in range(0, population_size, 2):
+            parent1, parent2 = selected_parents[i], selected_parents[i + 1]
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1)
+            child2 = mutate(child2)
+            new_population.extend([child1, child2])
 
-        # Elitismo
-        elite_population = elitism(population, fitness_values, elite_size)
+        population = new_population
 
-        # Substituição da população
-        population[:-elite_size] = population[selected_indices[:-elite_size]]
-        population[-elite_size:] = elite_population
+    # Retornar o melhor indivíduo da última geração
+    best_individual = max(population, key=lambda ind: fitness_function(ind[0], ind[1]))
+    return best_individual, fitness_function(best_individual[0], best_individual[1])
 
-    # Resultado final
-    best_solution_index = np.argmax(fitness_values)
-    best_solution = population[best_solution_index]
-    best_fitness = fitness_values[best_solution_index]
 
-    print("Melhor solução:", best_solution)
-    print("Melhor valor de fitness:", best_fitness)
-    return {'bestSolutin': best_solution.tolist(), 'bestFitness': best_fitness}
+# Parâmetros do algoritmo genético
+population_size = 100
+generations = 50
+
+selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
+tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
+
+# Executar o algoritmo genético
+best_solution, best_fitness = genetic_algorithm(population_size, generations,
+                                                selection_method, tournament_size)
+
+# Exibir os resultados
+print("Melhor solução:", best_solution)
+print("Melhor valor de aptidão:", best_fitness)
