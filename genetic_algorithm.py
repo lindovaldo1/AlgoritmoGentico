@@ -29,7 +29,7 @@ def crossover(parent1, parent2):
 
 
 # Função de mutação
-def mutate(individual, mutation_rate=0.1):
+def mutate(individual, mutation_rate):
     mutated_x1 = individual[0] + random.uniform(-mutation_rate, mutation_rate)
     mutated_x2 = individual[1] + random.uniform(-mutation_rate, mutation_rate)
 
@@ -58,7 +58,7 @@ def select_parents(population, fitness_scores, method, tournament_size):
     return selected_parents
 
 # Algoritmo genético principal
-def genetic_algorithm(population_size, generations, selection_method, tournament_size):
+def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate):
 
     # Inicialização da população
     population = [generate_individual() for _ in range(population_size)]
@@ -76,8 +76,8 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
         for i in range(0, population_size, 2):
             parent1, parent2 = selected_parents[i], selected_parents[i + 1]
             child1, child2 = crossover(parent1, parent2)
-            child1 = mutate(child1)
-            child2 = mutate(child2)
+            child1 = mutate(child1, mutation_rate)
+            child2 = mutate(child2, mutation_rate)
             new_population.extend([child1, child2])
 
         population = new_population
@@ -90,13 +90,14 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
 # Parâmetros do algoritmo genético
 population_size = 100
 generations = 50
-
+mutation_rate = 0.1
 selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
 tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
 
 # Executar o algoritmo genético
 best_solution, best_fitness = genetic_algorithm(population_size, generations,
-                                                selection_method, tournament_size)
+                                                selection_method, tournament_size,
+                                                mutation_rate,)
 
 # Exibir os resultados
 print("Melhor solução:", best_solution)
