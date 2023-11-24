@@ -19,18 +19,45 @@ def generate_individual():
 
 
 # Função de crossover (recombinação)
-def crossover(parent1, parent2, probability_crossover):
+def crossover(parent1, parent2, probability_crossover, crossover_type):
     # Verifica se o crossover deve ocorrer
     if random.random() < probability_crossover:
-        crossover_point = random.uniform(0, 1)
-        child1 = (crossover_point * parent1[0] + (1 - crossover_point) * parent2[0],
-                  crossover_point * parent1[1] + (1 - crossover_point) * parent2[1])
-        child2 = (crossover_point * parent2[0] + (1 - crossover_point) * parent1[0],
-                  crossover_point * parent2[1] + (1 - crossover_point) * parent1[1])
-        return  child1, child2
+        if crossover_type == "one_point":
+            return one_point_crossover(parent1, parent2)
+        elif crossover_type == "two_point":
+            return two_point_crossover(parent1, parent2)
+        else:
+            raise ValueError("Tipo de crossover inválido. Escolha 'one_point' ou 'two_point'.")
     else:
         # Sem crossover, retornamos os pais sem alterações
         return parent1, parent2
+
+def one_point_crossover(parent1, parent2):
+    crossover_point = random.uniform(0, 1)
+    child1 = (crossover_point * parent1[0] + (1 - crossover_point) * parent2[0],
+              crossover_point * parent1[1] + (1 - crossover_point) * parent2[1])
+    child2 = (crossover_point * parent2[0] + (1 - crossover_point) * parent1[0],
+              crossover_point * parent2[1] + (1 - crossover_point) * parent1[1])
+    return child1, child2
+
+def two_point_crossover(parent1, parent2):
+    crossover_point1 = random.uniform(0, 1)
+    crossover_point2 = random.uniform(0, 1)
+
+    if crossover_point1 > crossover_point2:
+        crossover_point1, crossover_point2 = crossover_point2, crossover_point1
+
+    child1 = (
+        crossover_point1 * parent1[0] + (crossover_point2 - crossover_point1) * parent2[0] + (1 - crossover_point2) * parent1[0],
+        crossover_point1 * parent1[1] + (crossover_point2 - crossover_point1) * parent2[1] + (1 - crossover_point2) * parent1[1]
+    )
+
+    child2 = (
+        crossover_point1 * parent2[0] + (crossover_point2 - crossover_point1) * parent1[0] + (1 - crossover_point2) * parent2[0],
+        crossover_point1 * parent2[1] + (crossover_point2 - crossover_point1) * parent1[1] + (1 - crossover_point2) * parent2[1]
+    )
+
+    return child1, child2
 
 # Função de mutação
 def mutate(individual, mutation_rate):
@@ -62,7 +89,7 @@ def select_parents(population, fitness_scores, method, tournament_size):
     return selected_parents
 
 # Algoritmo genético principal
-def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover, elitism_rate):
+def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover, elitism_rate, crossover_type):
 
     # Inicialização da população
     population = [generate_individual() for _ in range(population_size)]
@@ -85,7 +112,7 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
 
         for i in range(0, population_size, 2):
             parent1, parent2 = selected_parents[i], selected_parents[i + 1]
-            child1, child2 = crossover(parent1, parent2, probability_crossover)
+            child1, child2 = crossover(parent1, parent2, probability_crossover, crossover_type)
             child1 = mutate(child1, mutation_rate)
             child2 = mutate(child2, mutation_rate)
             new_population.extend([child1, child2])
@@ -105,13 +132,14 @@ mutation_rate = 0.1
 generations = 50
 selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
 tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
-elitism_rate = 2
+elitism_rate = 0.2
+crossover_type = "two_point"  #one_point ou "two_point"
 
 # Executar o algoritmo genético
 best_solution, best_fitness = genetic_algorithm(population_size, generations,
                                                 selection_method, tournament_size,
                                                 mutation_rate, probability_crossover,
-                                                elitism_rate, )
+                                                elitism_rate, crossover_type)
 
 # Exibir os resultados
 print("Melhor solução:", best_solution)
