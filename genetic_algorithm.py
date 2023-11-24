@@ -62,7 +62,7 @@ def select_parents(population, fitness_scores, method, tournament_size):
     return selected_parents
 
 # Algoritmo genético principal
-def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover):
+def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover, elitism_rate):
 
     # Inicialização da população
     population = [generate_individual() for _ in range(population_size)]
@@ -75,8 +75,14 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
         # Seleção de pais com base na aptidão
         selected_parents = select_parents(population, fitness_scores, selection_method, tournament_size)
 
-        # Crossover e mutação para gerar a próxima geração
-        new_population = []
+        # Aplica elitismo: mantém os melhores indivíduos sem crossover ou mutação
+        elite_size = int(elitism_rate * population_size)
+        elite = sorted(zip(population, fitness_scores), key=lambda x: x[1], reverse=True)[:elite_size]
+        elite = [ind for ind, _ in elite]
+
+        # Crossover e mutação para gerar o restante da população
+        new_population = elite.copy()  # Inicia com os melhores indivíduos (elitismo)
+
         for i in range(0, population_size, 2):
             parent1, parent2 = selected_parents[i], selected_parents[i + 1]
             child1, child2 = crossover(parent1, parent2, probability_crossover)
@@ -97,14 +103,15 @@ population_size = 100
 probability_crossover = 0.8
 mutation_rate = 0.1
 generations = 50
-
-selection_method = "tournament"  # Alternativas: "roulette" ou "tournament"
+selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
 tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
+elitism_rate = 2
 
 # Executar o algoritmo genético
 best_solution, best_fitness = genetic_algorithm(population_size, generations,
                                                 selection_method, tournament_size,
-                                                mutation_rate, probability_crossover,)
+                                                mutation_rate, probability_crossover,
+                                                elitism_rate, )
 
 # Exibir os resultados
 print("Melhor solução:", best_solution)
