@@ -1,5 +1,6 @@
 import random
 import math
+import matplotlib.pyplot as plt
 
 # Definindo as variáveis e limites
 x1_lower_bound, x1_upper_bound = -3.1, 12.1
@@ -88,6 +89,25 @@ def select_parents(population, fitness_scores, method, tournament_size):
 
     return selected_parents
 
+
+# Configuração do gráfico
+fig, ax = plt.subplots()
+x_data = []
+y_data = []
+
+# Função para atualizar o gráfico
+def update_plot(generation, best_fitness):
+    ax.clear()
+    x_data.append(generation)
+    y_data.append(best_fitness)
+
+    ax.plot(x_data, y_data, label='Melhor Aptidão')
+    ax.set_title('Aptidão ao longo das gerações')
+    ax.set_xlabel('Geração')
+    ax.set_ylabel('Aptidão')
+    ax.legend()
+
+
 # Algoritmo genético principal
 def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover, elitism_rate, crossover_type):
 
@@ -110,6 +130,11 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
         # Crossover e mutação para gerar o restante da população
         new_population = elite.copy()  # Inicia com os melhores indivíduos (elitismo)
 
+        # Atualiza o gráfico a cada geração
+        best_individual = max(population, key=lambda ind: fitness_function(ind[0], ind[1]))
+        best_fitness = fitness_function(best_individual[0], best_individual[1])
+        update_plot(generation, best_fitness)
+
         for i in range(0, population_size, 2):
             parent1, parent2 = selected_parents[i], selected_parents[i + 1]
             child1, child2 = crossover(parent1, parent2, probability_crossover, crossover_type)
@@ -126,13 +151,13 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
 
 # Parâmetros do algoritmo genético
 # chromossome_size
-population_size = 100
+population_size = 5000
 probability_crossover = 0.8
-mutation_rate = 0.1
-generations = 50
-selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
-tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
-elitism_rate = 0.2
+mutation_rate = 0.9
+generations = 200
+selection_method = "tournament"  # Alternativas: "roulette" ou "tournament"
+tournament_size = 100  # Usado apenas se o método de seleção for "tournament"
+elitism_rate = 20
 crossover_type = "two_point"  #one_point ou "two_point"
 
 # Executar o algoritmo genético
@@ -144,3 +169,15 @@ best_solution, best_fitness = genetic_algorithm(population_size, generations,
 # Exibir os resultados
 print("Melhor solução:", best_solution)
 print("Melhor valor de aptidão:", best_fitness)
+
+
+
+# Exibir os resultados finais
+max_real = 24.1568  # Valor máximo real da função (calculado previamente)
+error_percentage = ((best_fitness - max_real) / max_real) * 100
+
+# print("Melhor solução:", best_individual)
+print("Geração em que foi encontrado:", generations)
+print("Porcentagem de erro:", error_percentage)
+
+plt.show()  # Mantém o gráfico aberto após a execução
