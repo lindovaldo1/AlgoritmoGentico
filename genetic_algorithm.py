@@ -19,14 +19,18 @@ def generate_individual():
 
 
 # Função de crossover (recombinação)
-def crossover(parent1, parent2):
-    crossover_point = random.uniform(0, 1)
-    child1 = (crossover_point * parent1[0] + (1 - crossover_point) * parent2[0],
-              crossover_point * parent1[1] + (1 - crossover_point) * parent2[1])
-    child2 = (crossover_point * parent2[0] + (1 - crossover_point) * parent1[0],
-              crossover_point * parent2[1] + (1 - crossover_point) * parent1[1])
-    return child1, child2
-
+def crossover(parent1, parent2, probability_crossover):
+    # Verifica se o crossover deve ocorrer
+    if random.random() < probability_crossover:
+        crossover_point = random.uniform(0, 1)
+        child1 = (crossover_point * parent1[0] + (1 - crossover_point) * parent2[0],
+                  crossover_point * parent1[1] + (1 - crossover_point) * parent2[1])
+        child2 = (crossover_point * parent2[0] + (1 - crossover_point) * parent1[0],
+                  crossover_point * parent2[1] + (1 - crossover_point) * parent1[1])
+        return  child1, child2
+    else:
+        # Sem crossover, retornamos os pais sem alterações
+        return parent1, parent2
 
 # Função de mutação
 def mutate(individual, mutation_rate):
@@ -58,7 +62,7 @@ def select_parents(population, fitness_scores, method, tournament_size):
     return selected_parents
 
 # Algoritmo genético principal
-def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate):
+def genetic_algorithm(population_size, generations, selection_method, tournament_size, mutation_rate, probability_crossover):
 
     # Inicialização da população
     population = [generate_individual() for _ in range(population_size)]
@@ -75,7 +79,7 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
         new_population = []
         for i in range(0, population_size, 2):
             parent1, parent2 = selected_parents[i], selected_parents[i + 1]
-            child1, child2 = crossover(parent1, parent2)
+            child1, child2 = crossover(parent1, parent2, probability_crossover)
             child1 = mutate(child1, mutation_rate)
             child2 = mutate(child2, mutation_rate)
             new_population.extend([child1, child2])
@@ -88,16 +92,19 @@ def genetic_algorithm(population_size, generations, selection_method, tournament
 
 
 # Parâmetros do algoritmo genético
+# chromossome_size
 population_size = 100
-generations = 50
+probability_crossover = 0.8
 mutation_rate = 0.1
-selection_method = "roulette"  # Alternativas: "roulette" ou "tournament"
+generations = 50
+
+selection_method = "tournament"  # Alternativas: "roulette" ou "tournament"
 tournament_size = 5  # Usado apenas se o método de seleção for "tournament"
 
 # Executar o algoritmo genético
 best_solution, best_fitness = genetic_algorithm(population_size, generations,
                                                 selection_method, tournament_size,
-                                                mutation_rate,)
+                                                mutation_rate, probability_crossover,)
 
 # Exibir os resultados
 print("Melhor solução:", best_solution)
